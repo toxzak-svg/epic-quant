@@ -136,6 +136,7 @@ def run_sweep(path: str, n_tokens: int, seq_len: int) -> dict:
     policies = {
         "1.58bit (brief)":  dict(sliding=2, gbits=4, mlp=4),
         "3bit":             dict(sliding=3, gbits=4, mlp=4),
+        "4bit (uniform)":   dict(sliding=4, gbits=4, mlp=4),
         "16bit (no quant)": dict(sliding=16, gbits=16, mlp=16),
     }
     out = {"policies": {}, "common": {"n_tokens": n_tokens, "seq_len": seq_len}}

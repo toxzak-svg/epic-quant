@@ -114,12 +114,12 @@ def dequantize_packed(packed: torch.Tensor, scales: torch.Tensor,
         q = (q01 - 1).to(torch.float32)
         return (q * scales.to(torch.float32).unsqueeze(1)).to(torch.bfloat16)
     if bits == 3:
-        out, in_packed = packed.shape
-        q01 = torch.zeros(out, in_packed * 3, dtype=torch.int64)
-        for j in range(3):
-            shift = 3 * j
-            mask = 0x7 if j < 2 else 0x3
-            q01[:, j::3] = ((packed >> shift) & mask).to(torch.int64)
+        out, in_packed = packed.shape  # in_packed = ceil(in_dim/2)
+        # Unpack: each byte has v0 in low 3 bits, v1 in next 3 bits
+        v0 = (packed & 0x7).to(torch.int64)
+        v1 = ((packed >> 3) & 0x7).to(torch.int64)
+        # interleave: [out, in_packed*2] = [v0[0], v1[0], v0[1], v1[1], ...]
+        q01 = torch.stack([v0, v1], dim=-1).reshape(out, in_packed * 2)
         q01 = q01[:, :in_dim]
         q = (q01 - 4).to(torch.float32)  # back to [-4, 3]
         return (q * scales.to(torch.float32).unsqueeze(1)).to(torch.bfloat16)
@@ -144,7 +144,8 @@ def packed_size_bytes(out_dim: int, in_dim: int, bits: int) -> int:
     if bits == 2:
         return out_dim * ((in_dim + 3) // 4)
     if bits == 3:
-        return out_dim * ((in_dim + 2) // 3)
+        # 2 values per byte (3+3 bits, 2 bits wasted). 2.67 bits/value effective.
+        return out_dim * ((in_dim + 1) // 2)
     if bits == 4:
         return out_dim * ((in_dim + 1) // 2)
     if bits == 16:
