@@ -1,3 +1,14 @@
+---
+license: apache-2.0
+tags:
+  - quantization
+  - gemma
+  - research
+  - cpu
+  - pytorch
+library_name: pytorch
+---
+
 # EPIC-Quant for Gemma 4 E4B
 
 CPU-first reference implementation of three layers-aware compression
